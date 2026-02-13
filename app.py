@@ -178,7 +178,7 @@ def main():
     elif st.session_state.step == 2:
         st.markdown("<br>", unsafe_allow_html=True)
         st.pyplot(draw_particle_heart())
-        st.markdown("<h4 style='text-align: center; color: #FFB6C1;'>用代码为你凝聚的粒子爱心 💓</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #FFB6C1;'>爱你呦 💓</h4>", unsafe_allow_html=True)
         
         if st.button("让我们一起开始 🚀"):
             st.session_state.step = 3
@@ -196,7 +196,7 @@ def main():
                 dates = ["Listening...", "Loading...", "2021-06-06"]
                 for d in dates:
                     st.markdown(f"<h1 style='text-align: center; color: white; margin-top: 50px;'>{d}</h1>", unsafe_allow_html=True)
-                    time.sleep(0.8)
+                    time.sleep(1.2)
                 
                 inject_heart_rain()
                 time.sleep(0.5)
@@ -205,7 +205,7 @@ def main():
                 img_path = find_love_image()
                 if img_path:
                     st.image(img_path, caption="那时候的我们", use_column_width=True)
-                    time.sleep(3)
+                    time.sleep(5)
                 else:
                     # 如果真的找不到，显示错误提示方便调试
                     st.error("⚠️ 没找到图片！请确认已上传 love.png 或 love.jpg")
@@ -246,3 +246,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
