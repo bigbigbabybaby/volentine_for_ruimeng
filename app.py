@@ -1,7 +1,6 @@
 import streamlit as st
 import numpy as np
-import pandas as pd
-import altair as alt
+import matplotlib.pyplot as plt
 import time
 import streamlit.components.v1 as components
 
@@ -12,7 +11,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. CSS 样式：定义粒子雪花和爱心雨 ---
+# --- 2. CSS 样式 (定义雪花和爱心雨) ---
 st.markdown("""
     <style>
     /* 全局背景黑色 */
@@ -21,12 +20,11 @@ st.markdown("""
         color: #FF69B4;
     }
     
-    /* 隐藏组件 */
+    /* 隐藏不需要的元素 */
     header {visibility: hidden;}
     footer {visibility: hidden;}
-    .stDeployButton {display:none;}
     
-    /* 按钮样式优化 */
+    /* 按钮样式 */
     .stButton>button {
         background-color: #FF1493;
         color: white;
@@ -36,139 +34,123 @@ st.markdown("""
         padding: 10px 24px;
         transition: all 0.3s;
         width: 100%;
-        box-shadow: 0 0 10px rgba(255, 20, 147, 0.5); /* 按钮发光 */
+        box-shadow: 0 0 10px rgba(255, 20, 147, 0.5);
     }
     .stButton>button:hover {
         background-color: #C71585;
         transform: scale(1.05);
-        box-shadow: 0 0 20px rgba(255, 20, 147, 0.8);
     }
 
-    /* Altair 图表去边框 */
-    #altair-viz-1 canvas { background-color: transparent !important; }
-
-    /* --- 自定义粒子雪花样式 --- */
-    .particle-snow {
+    /* 粒子雪花动画 */
+    .snowflake {
         position: fixed;
         top: -10px;
         background: white;
-        border-radius: 50%; /* 圆形粒子 */
+        border-radius: 50%;
+        opacity: 0.8;
         pointer-events: none;
         z-index: 9998;
-        box-shadow: 0 0 5px white; /* 粒子发光 */
+        box-shadow: 0 0 5px white;
+        animation: fall linear forwards;
+    }
+
+    /* 爱心雨动画 */
+    .heart-rain {
+        position: fixed;
+        top: -10vh;
+        font-size: 24px;
+        z-index: 9999;
+        animation: fall linear forwards;
+    }
+
+    @keyframes fall {
+        to { transform: translateY(110vh); }
     }
     </style>
 """, unsafe_allow_html=True)
 
 # --- 3. 核心功能函数 ---
 
-def generate_particle_heart(n_points=10000): # 增加到1万个点！
-    """生成高密度爱心粒子"""
-    t = np.linspace(0, 2 * np.pi, n_points)
+def draw_particle_heart():
+    """用 Matplotlib 画一个稳定的粒子爱心 (效果等同于之前的粒子图)"""
+    # 生成 5000 个随机点
+    t = np.random.uniform(0, 2 * np.pi, 5000)
+    # 心形公式
     x = 16 * np.sin(t)**3
     y = 13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t)
     
-    # 增加更多随机扩散，让心看起来更毛茸茸、更饱满
-    x += np.random.normal(0, 0.35, n_points)
-    y += np.random.normal(0, 0.35, n_points)
+    # 加入随机抖动，制造蓬松感
+    x += np.random.normal(0, 0.5, 5000)
+    y += np.random.normal(0, 0.5, 5000)
     
-    # 随机打乱顺序，绘制时更有质感
-    indices = np.arange(n_points)
-    np.random.shuffle(indices)
-    return pd.DataFrame({'x': x[indices], 'y': y[indices]})
+    # 绘图
+    fig, ax = plt.subplots(figsize=(5, 5))
+    fig.patch.set_facecolor('black') # 背景黑
+    ax.set_facecolor('black')
+    
+    # 绘制散点 (s=大小, alpha=透明度)
+    ax.scatter(x, y, s=3, c='#FF1493', alpha=0.6, edgecolors='none')
+    ax.axis('off')
+    return fig
 
-def create_particle_snow():
-    """生成微小粒子雪花 JS"""
-    js_code = """
+def create_snow():
+    """生成雪花 JS"""
+    # 简单的 JS 生成 div
+    js = """
     <script>
-    function createSnowParticle() {
-        const snow = document.createElement('div');
-        snow.className = 'particle-snow';
-        // 随机大小：2px 到 5px
-        const size = Math.random() * 3 + 2; 
-        snow.style.width = size + 'px';
-        snow.style.height = size + 'px';
-        snow.style.left = Math.random() * 100 + 'vw';
-        // 随机透明度
-        snow.style.opacity = Math.random() * 0.5 + 0.3;
-        
-        document.body.appendChild(snow);
-
-        // 飘落动画
-        const duration = Math.random() * 5000 + 3000; // 3-8秒
-        const keyframes = [
-            { transform: 'translate(0, 0)' },
-            { transform: `translate(${Math.random() * 50 - 25}px, 110vh)` } // 稍微左右飘动
-        ];
-        
-        const animation = snow.animate(keyframes, {
-            duration: duration,
-            easing: 'linear',
-            fill: 'forwards'
-        });
-
-        animation.onfinish = () => snow.remove();
+    function createSnow() {
+        const el = document.createElement('div');
+        el.className = 'snowflake';
+        const size = Math.random() * 3 + 2;
+        el.style.width = size + 'px';
+        el.style.height = size + 'px';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
     }
-    // 每 50ms 生成一个粒子
-    setInterval(createSnowParticle, 50);
+    setInterval(createSnow, 100);
     </script>
     """
-    components.html(js_code, height=0)
+    components.html(js, height=0)
 
-def trigger_heart_rain():
-    """全屏爱心雨"""
-    js_code = """
+def create_rain():
+    """生成爱心雨 JS"""
+    js = """
     <script>
-    function createHeartRain() {
-        const container = document.createElement('div');
-        container.style.position = 'fixed';
-        container.style.top = '0';
-        container.style.left = '0';
-        container.style.width = '100vw';
-        container.style.height = '100vh';
-        container.style.pointerEvents = 'none';
-        container.style.zIndex = '9999';
-        document.body.appendChild(container);
-
-        const emojis = ['❤️', '💖', '💗', '💓', '💞'];
-        for (let i = 0; i < 200; i++) { // 200个爱心
-            const heart = document.createElement('div');
-            heart.innerHTML = emojis[Math.floor(Math.random() * emojis.length)];
-            heart.style.position = 'absolute';
-            heart.style.left = Math.random() * 100 + 'vw';
-            heart.style.top = -50 + 'px';
-            heart.style.fontSize = (Math.random() * 25 + 15) + 'px';
-            heart.animate([
-                { transform: 'translateY(0px)' },
-                { transform: 'translateY(110vh)' }
-            ], {
-                duration: Math.random() * 2000 + 2000,
-                easing: 'linear'
-            });
-            container.appendChild(heart);
-        }
-        setTimeout(() => container.remove(), 4000);
+    function createRain() {
+        const el = document.createElement('div');
+        el.className = 'heart-rain';
+        el.innerHTML = '❤️';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        el.style.fontSize = (Math.random() * 20 + 15) + 'px';
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 4000);
     }
-    createHeartRain();
+    // 密集生成
+    const interval = setInterval(createRain, 50);
+    // 3秒后停止生成，避免浏览器卡顿
+    setTimeout(() => clearInterval(interval), 3000);
     </script>
     """
-    components.html(js_code, height=0)
+    components.html(js, height=0)
 
-# --- 4. 状态管理初始化 ---
+# --- 4. 状态管理 ---
 if 'step' not in st.session_state:
     st.session_state.step = 0
-if 'stage3_played' not in st.session_state:
-    st.session_state.stage3_played = False # 专门用来解决“跳回图片”的锁
+if 'animation_played' not in st.session_state:
+    st.session_state.animation_played = False
 
 # --- 5. 主流程 ---
 
 def main():
     
-    # 始终在后台播放粒子雪花（除了第一步）
+    # 只要不是第一页，就一直下雪
     if st.session_state.step > 0:
-        create_particle_snow()
+        create_snow()
 
-    # === 阶段 0：密码解锁 ===
+    # === 阶段 0：密码 ===
     if st.session_state.step == 0:
         st.markdown("<br><br><br>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center;'>🔒 专属空间 Access</h3>", unsafe_allow_html=True)
@@ -178,9 +160,9 @@ def main():
             st.session_state.step = 1
             st.rerun()
 
-    # === 阶段 1：初次见面 ===
+    # === 阶段 1：问答 ===
     elif st.session_state.step == 1:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h1 style='color: #FF69B4; text-align: center;'>❄️ 睿睿，情人节快乐 ❄️</h1>", unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("<h3 style='text-align: center;'>是否愿意和大宝一起过情人节？</h3>", unsafe_allow_html=True)
@@ -194,81 +176,66 @@ def main():
             if st.button("否 💔"):
                 st.error("⚠️ 大宝不允许！禁止选这个！只能选愿意！")
 
-    # === 阶段 2：粒子爱心 ===
+    # === 阶段 2：粒子爱心 (最稳的 Matplotlib 版) ===
     elif st.session_state.step == 2:
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # 绘制 10000 个粒子的爱心
-        df_heart = generate_particle_heart(10000)
+        # 直接显示图表，绝对不会加载失败
+        st.pyplot(draw_particle_heart())
         
-        chart = alt.Chart(df_heart).mark_circle(size=2, color='#FF1493', opacity=0.8).encode(
-            x=alt.X('x', axis=None),
-            y=alt.Y('y', axis=None),
-            tooltip=alt.value(None)
-        ).properties(
-            width=500, height=500, background='transparent'
-        ).configure_view(strokeWidth=0)
-
-        st.altair_chart(chart, use_container_width=True)
-        
-        st.markdown("<h4 style='text-align: center; color: #FFB6C1;'>用 10,000 个粒子凝聚成对你的喜欢 💓</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='text-align: center; color: #FFB6C1;'>用代码为你凝聚的粒子爱心 💓</h4>", unsafe_allow_html=True)
         
         if st.button("让我们一起开始 🚀"):
             st.session_state.step = 3
             st.rerun()
 
-    # === 阶段 3：时光机 & 合照（修复了跳回图片的问题） ===
+    # === 阶段 3：回忆杀 (逻辑修复版) ===
     elif st.session_state.step == 3:
         
+        # 容器：用来放倒计时和照片
         placeholder = st.empty()
         
-        # --- 关键修复：加锁逻辑 ---
-        # 只有第一次进入这个阶段时，才播放动画（倒计时、照片）
-        # 点击按钮后，因为 stage3_played 已经是 True，会跳过这些，直接显示按钮
-        if not st.session_state.stage3_played:
+        # 如果动画没播过，就播一次
+        if not st.session_state.animation_played:
             with placeholder.container():
-                # 倒计时动画
-                st.markdown("### 📅 我们的故事开始于...")
+                # 倒计时
                 dates = ["Listening...", "Loading...", "2021-06-06"]
                 for d in dates:
-                    st.markdown(f"<h1 style='text-align: center; color: white;'>{d}</h1>", unsafe_allow_html=True)
+                    st.markdown(f"<h1 style='text-align: center; color: white; margin-top: 50px;'>{d}</h1>", unsafe_allow_html=True)
                     time.sleep(0.8)
                 
                 # 触发一次爱心雨
-                trigger_heart_rain()
-                time.sleep(1)
+                create_rain()
                 
-                # 显示合照
+                # 显示照片
                 try:
                     st.image("love.png", caption="那时候的我们", use_column_width=True)
-                    time.sleep(4)
+                    time.sleep(3)
                 except:
-                    st.warning("（记得传照片 love.png）")
+                    st.warning("（这里需要 love.png）")
                     time.sleep(2)
             
-            # 播放完后清空占位符
+            # 播完清空
             placeholder.empty()
-            # 标记为已播放
-            st.session_state.stage3_played = True
-            # 强制刷新一次，进入稳定状态
-            st.rerun()
+            st.session_state.animation_played = True
+            st.rerun() # 强制刷新，进入下面那个状态
 
-        # --- 稳定状态（动画播完后显示的内容） ---
+        # 动画播完后，固定显示这一段
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown(f"<h3 style='text-align: center;'>这是我们要一起过的第 <span style='color:red; font-size:30px'>5</span> 个情人节</h3>", unsafe_allow_html=True)
         st.markdown("<h2 style='text-align: center;'>✨ 我们还要过好多个情人节 ✨</h2>", unsafe_allow_html=True)
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # 这个按钮现在点击非常丝滑，因为不会再去跑上面的动画代码了
+        # 这个按钮现在绝对不会跳回去了
         if st.button("点我接收满屏爱心 💖"):
             st.session_state.step = 4
             st.rerun()
 
-    # === 阶段 4：大结局 ===
+    # === 阶段 4：结局 ===
     elif st.session_state.step == 4:
-        # 进入瞬间触发爱心雨
-        trigger_heart_rain()
+        # 触发爱心雨
+        create_rain()
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("<h1 style='text-align: center;'>💖 永远爱你 💖</h1>", unsafe_allow_html=True)
@@ -282,9 +249,8 @@ def main():
         
         st.markdown("<br><br>", unsafe_allow_html=True)
         if st.button("再看一遍我们的故事 🔄"):
-            # 重置所有状态
             st.session_state.step = 0
-            st.session_state.stage3_played = False
+            st.session_state.animation_played = False
             st.rerun()
 
 if __name__ == "__main__":
