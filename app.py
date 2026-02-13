@@ -193,13 +193,13 @@ def main():
         if not st.session_state.animation_done:
             with placeholder.container():
                 # 倒计时
-                dates = ["Listening...", "Loading...", "2021-06-06"]
+                dates = ["来波回忆杀", "恋爱开始", "2021-06-06"]
                 for d in dates:
                     st.markdown(f"<h1 style='text-align: center; color: white; margin-top: 50px;'>{d}</h1>", unsafe_allow_html=True)
                     time.sleep(1.2)
                 
                 inject_heart_rain()
-                time.sleep(0.5)
+                time.sleep(1)
                 
                 # --- 智能寻找并显示图片 ---
                 img_path = find_love_image()
@@ -246,4 +246,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
