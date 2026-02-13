@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 import random
+import os
 
 # --- 1. 页面配置 ---
 st.set_page_config(
@@ -11,8 +12,7 @@ st.set_page_config(
     layout="centered"
 )
 
-# --- 2. CSS 样式 (核心特效) ---
-# 注意：这里定义了动画的关键帧，但具体的元素我们稍后用 Python 动态生成注入
+# --- 2. CSS 样式 ---
 st.markdown("""
     <style>
     /* 全局背景黑色 */
@@ -21,11 +21,10 @@ st.markdown("""
         color: #FF69B4;
     }
     
-    /* 隐藏顶部红线和脚部 */
     header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 按钮样式增强 */
+    /* 按钮样式 */
     .stButton>button {
         background-color: #FF1493;
         color: white;
@@ -38,7 +37,7 @@ st.markdown("""
         width: 100%;
         box-shadow: 0 0 15px rgba(255, 20, 147, 0.6);
         position: relative;
-        z-index: 10000; /* 保证按钮在最上层，不被特效遮挡 */
+        z-index: 10000;
     }
     .stButton>button:hover {
         background-color: #C71585;
@@ -46,12 +45,12 @@ st.markdown("""
         box-shadow: 0 0 25px rgba(255, 20, 147, 1.0);
     }
 
-    /* 定义漂浮物的基础样式 */
+    /* 漂浮物样式 */
     .floater {
         position: fixed;
         top: -10vh;
-        z-index: 9999; /* 保证在最顶层 */
-        pointer-events: none; /* 让鼠标可以穿透特效点击按钮 */
+        z-index: 9999;
+        pointer-events: none;
         animation: fall linear forwards;
     }
 
@@ -61,20 +60,33 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 辅助函数 (用 Python 生成 HTML 注入) ---
+# --- 3. 辅助函数 ---
+
+def find_love_image():
+    """智能查找图片，不区分大小写和格式"""
+    # 可能的文件名列表
+    possible_names = [
+        "love.png", "love.PNG", 
+        "love.jpg", "love.JPG", 
+        "love.jpeg", "love.JPEG",
+        "Love.png", "Love.jpg"
+    ]
+    
+    for name in possible_names:
+        if os.path.exists(name):
+            return name
+    return None
 
 def inject_snow():
-    """直接注入 HTML 雪花，确保全屏可见"""
+    """注入 HTML 雪花"""
     snow_html = ""
-    # 生成 50 个雪花
     for _ in range(50):
         left = random.randint(0, 100)
-        duration = random.uniform(3, 8) # 飘落时间 3-8秒
-        delay = random.uniform(0, 5)    # 随机延迟
-        size = random.uniform(4, 8)     # 大小
+        duration = random.uniform(3, 8)
+        delay = random.uniform(0, 5)
+        size = random.uniform(4, 8)
         opacity = random.uniform(0.4, 0.9)
         
-        # 这是一个发光的小圆点
         style = f"""
             left: {left}vw;
             width: {size}px;
@@ -87,15 +99,12 @@ def inject_snow():
             animation-delay: {delay}s;
         """
         snow_html += f"<div class='floater' style='{style}'></div>"
-    
-    # 注入到页面
     st.markdown(snow_html, unsafe_allow_html=True)
 
 def inject_heart_rain():
-    """直接注入 HTML 爱心雨"""
+    """注入 HTML 爱心雨"""
     rain_html = ""
     emojis = ['❤️', '💖', '💗', '💓', '💞']
-    # 生成 60 个爱心
     for _ in range(60):
         left = random.randint(0, 100)
         duration = random.uniform(2, 5)
@@ -110,7 +119,6 @@ def inject_heart_rain():
             animation-delay: {delay}s;
         """
         rain_html += f"<div class='floater' style='{style}'>{emoji}</div>"
-    
     st.markdown(rain_html, unsafe_allow_html=True)
 
 def draw_particle_heart():
@@ -118,7 +126,6 @@ def draw_particle_heart():
     t = np.random.uniform(0, 2 * np.pi, 8000)
     x = 16 * np.sin(t)**3
     y = 13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t)
-    # 扩散效果
     x += np.random.normal(0, 0.4, 8000)
     y += np.random.normal(0, 0.4, 8000)
     
@@ -132,12 +139,10 @@ def draw_particle_heart():
 # --- 4. 状态管理 ---
 if 'step' not in st.session_state:
     st.session_state.step = 0
-# 用来记录动画是否已播完，防止刷新重播
 if 'animation_done' not in st.session_state:
     st.session_state.animation_done = False
 
 # --- 5. 主程序 ---
-
 def main():
     
     # 全局特效：除了密码页，其他页都下雪
@@ -177,15 +182,14 @@ def main():
         
         if st.button("让我们一起开始 🚀"):
             st.session_state.step = 3
-            st.session_state.animation_done = False # 重置动画状态
+            st.session_state.animation_done = False 
             st.rerun()
 
-    # === 阶段 3：回忆杀 (彻底修复跳闪问题) ===
+    # === 阶段 3：回忆杀 ===
     elif st.session_state.step == 3:
-        
         placeholder = st.empty()
         
-        # 只有在“动画未完成”时才播放动画
+        # 只有在“动画未完成”时才播放
         if not st.session_state.animation_done:
             with placeholder.container():
                 # 倒计时
@@ -194,38 +198,36 @@ def main():
                     st.markdown(f"<h1 style='text-align: center; color: white; margin-top: 50px;'>{d}</h1>", unsafe_allow_html=True)
                     time.sleep(0.8)
                 
-                # 第一波爱心雨
                 inject_heart_rain()
                 time.sleep(0.5)
                 
-                # 照片
-                try:
-                    st.image("love.png", caption="那时候的我们", use_column_width=True)
+                # --- 智能寻找并显示图片 ---
+                img_path = find_love_image()
+                if img_path:
+                    st.image(img_path, caption="那时候的我们", use_column_width=True)
                     time.sleep(3)
-                except:
-                    st.warning("（这里需要 love.png）")
-                    time.sleep(2)
+                else:
+                    # 如果真的找不到，显示错误提示方便调试
+                    st.error("⚠️ 没找到图片！请确认已上传 love.png 或 love.jpg")
+                    st.write(f"当前目录下的文件: {os.listdir('.')}") # 帮你查错
+                    time.sleep(3)
             
-            # 动画播完，设置标志位，并刷新
             st.session_state.animation_done = True
             st.rerun()
         
         else:
-            # === 稳定状态（动画播完后停留在这里） ===
-            # 这里是刷新后直接显示的内容，没有 sleep，所以点击按钮不会跳
+            # 动画播完后的稳定界面
             st.markdown("<br><br>", unsafe_allow_html=True)
             st.markdown(f"<h3 style='text-align: center;'>这是我们要一起过的第 <span style='color:red; font-size:30px'>5</span> 个情人节</h3>", unsafe_allow_html=True)
             st.markdown("<h2 style='text-align: center;'>✨ 我们还要过好多个情人节 ✨</h2>", unsafe_allow_html=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-            # 点击按钮去下一页
             if st.button("点我接收满屏爱心 💖"):
                 st.session_state.step = 4
                 st.rerun()
 
-    # === 阶段 4：大结局 (满屏爱心) ===
+    # === 阶段 4：大结局 ===
     elif st.session_state.step == 4:
-        # 这里每次刷新都会注入新的爱心雨
         inject_heart_rain()
         
         st.markdown("<br><br>", unsafe_allow_html=True)
