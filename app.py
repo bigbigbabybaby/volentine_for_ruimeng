@@ -1,165 +1,210 @@
 import streamlit as st
-import numpy as np
-import matplotlib.pyplot as plt
+import time
 from datetime import datetime
-from PIL import Image
 
-# --- 1. 页面基础设置 ---
+# --- 1. 页面配置：黑色沉浸式 ---
 st.set_page_config(
-    page_title="For My 蕊萌",
-    page_icon="🤍", # 用白色爱心，显高级
+    page_title="To Ruirui",
+    page_icon="❤️",
     layout="centered"
 )
 
-# --- 2. 极简高级风 CSS (玻璃拟态 + 动态渐变) ---
-# 这是一个非常流行的INS风配色和CSS样式
-custom_css = """
-<style>
-    /* 隐藏默认菜单 */
-    #MainMenu {visibility: hidden;}
+# --- 2. CSS 样式：黑色背景 + 粉色文字 + 动态效果 ---
+st.markdown("""
+    <style>
+    /* 全局背景黑色 */
+    .stApp {
+        background-color: #000000;
+        color: #FF69B4; /* 粉色文字 */
+    }
+    
+    /* 隐藏顶部和脚部 */
+    header {visibility: hidden;}
     footer {visibility: hidden;}
     
-    /* 背景：高级灰粉渐变 */
-    .stApp {
-        background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
-    }
-    
-    /* 玻璃拟态卡片效果 */
-    div.css-1r6slb0, .stMetric {
-        background: rgba(255, 255, 255, 0.4);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.18);
-        padding: 20px;
-        box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-    }
-    
-    /* 标题样式 */
-    h1 {
-        font-family: 'Helvetica Neue', sans-serif;
-        color: #2c3e50;
-        font-weight: 300;
-        text-align: center;
-        letter-spacing: 2px;
-    }
-    
-    /* 名字的高亮 */
-    .name-highlight {
-        color: #e84393;
-        font-weight: bold;
-    }
-    
-    /* 自定义按钮样式 */
+    /* 按钮样式 - 粉色霓虹感 */
     .stButton>button {
-        width: 100%;
-        background-color: #ff7675;
+        background-color: #FF1493;
         color: white;
-        border-radius: 12px;
-        border: none;
-        padding: 10px 24px;
-        transition: all 0.3s ease;
+        border-radius: 20px;
+        border: 2px solid #FF69B4;
+        font-size: 18px;
+        padding: 10px 30px;
+        transition: all 0.3s;
     }
     .stButton>button:hover {
-        background-color: #d63031;
-        transform: scale(1.02);
+        background-color: #C71585;
+        border-color: white;
+        transform: scale(1.1);
     }
-</style>
-"""
-st.markdown(custom_css, unsafe_allow_html=True)
 
-# --- 3. 核心功能函数 ---
-
-def draw_heart():
-    """用数学公式画一个高级的爱心"""
-    t = np.linspace(0, 2 * np.pi, 1000)
-    x = 16 * np.sin(t)**3
-    y = 13 * np.cos(t) - 5 * np.cos(2*t) - 2 * np.cos(3*t) - np.cos(4*t)
+    /* 标题样式 */
+    h1, h2, h3 {
+        color: #FF69B4 !important;
+        text-align: center;
+        text-shadow: 0 0 10px #FF1493;
+    }
     
-    # 创建图表，设置透明背景
-    fig, ax = plt.subplots(figsize=(4, 4))
-    ax.plot(x, y, color='#e84393', linewidth=3) # 高级粉色线条
-    ax.fill(x, y, color='#ffeaa7', alpha=0.3)   # 内部淡黄色填充
-    ax.axis('off') # 去掉坐标轴
-    fig.patch.set_alpha(0) # 图表背景透明
-    return fig
+    /* 普通文字样式 */
+    p {
+        color: #FFB6C1;
+        font-size: 18px;
+        text-align: center;
+    }
 
-def get_days_together():
-    """计算在一起的天数（这里假设你们是5年前的今天在一起的，你可以修改日期）"""
-    start_date = datetime(2021, 6, 6) # 修改这里为你们的纪念日
-    now = datetime.now()
-    delta = now - start_date
-    return delta.days
+    /* 跳动爱心动画 */
+    @keyframes heartbeat {
+        0% { transform: scale(1); }
+        25% { transform: scale(1.1); }
+        40% { transform: scale(1); }
+        60% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+    .heart-beat {
+        font-size: 100px;
+        color: #FF1493;
+        text-align: center;
+        animation: heartbeat 1.5s infinite;
+        margin: 20px 0;
+    }
+    
+    /* 满屏爱心雨特效 */
+    .falling-heart {
+        position: fixed;
+        top: -10%;
+        color: #FF1493;
+        animation: fall linear forwards;
+    }
+    @keyframes fall {
+        to { transform: translateY(110vh); }
+    }
+    </style>
+""", unsafe_allow_html=True)
 
-# --- 4. 主页面逻辑 ---
+# --- 3. 状态管理（剧本控制） ---
+if 'step' not in st.session_state:
+    st.session_state.step = 0
+
+# --- 4. 辅助函数 ---
+def create_heart_rain():
+    # 简单的满屏爱心飘落效果
+    st.markdown("""
+    <script>
+    const body = document.body;
+    for (let i = 0; i < 50; i++) {
+        const heart = document.createElement('div');
+        heart.innerHTML = '❤️';
+        heart.className = 'falling-heart';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.fontSize = (Math.random() * 20 + 20) + 'px';
+        heart.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        body.appendChild(heart);
+    }
+    </script>
+    """, unsafe_allow_html=True)
+
+# --- 5. 主剧本逻辑 ---
 
 def main():
-    # 侧边栏解锁（保留这个互动，很有趣）
-    with st.sidebar:
-        st.write("🔐 Identity Verification")
-        name = st.text_input("Please enter your name:", type="password") # 密码模式更有神秘感
+    # === 阶段 0：密码解锁 ===
+    if st.session_state.step == 0:
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        st.markdown("### 🔒 这是一个专属空间")
+        password = st.text_input("请输入暗号（名字）：", type="password")
         
-    if name in ["睿睿", "Ruimeng", "ruimeng", "宝宝", "niu"]:
-        # --- 页面头部 ---
-        st.markdown("<h1>HEY, <span class='name-highlight'>LIU RUIMENG</span></h1>", unsafe_allow_html=True)
-        st.caption("Happy Valentine's Day · 5th Anniversary")
+        if password in ["刘蕊萌", "睿睿", "ruirui", "Ruimeng", "宝宝"]:
+            st.session_state.step = 1
+            st.rerun() # 刷新页面进入下一阶段
+
+    # === 阶段 1：初次见面 & 飘雪 ===
+    elif st.session_state.step == 1:
+        st.snow() # 飘雪
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.title("❄️ 睿睿，情人节快乐 ❄️")
+        st.markdown("<br>", unsafe_allow_html=True)
         
-        st.write("---")
+        st.write("大宝想问你：")
+        st.markdown("### 是否愿意和大宝一起过情人节？")
         
-        # --- 照片展示区 (拍立得风格) ---
-        col1, col2, col3 = st.columns([1, 6, 1])
+        col1, col2 = st.columns([1,1])
+        with col1:
+            if st.button("是，我愿意 ❤️"):
+                st.session_state.step = 2
+                st.rerun()
         with col2:
-            try:
-                # 记得上传一张名为 love.png 的合照
-                image = Image.open('spongebob.png') 
-                st.image(image, caption="You & Me", use_column_width=True)
-            except:
-                st.error("📷 请上传一张合照并命名为 spongebob.png")
+            if st.button("否 💔"):
+                st.error("⚠️ 大宝不允许！禁止选这个！请重新选择！")
 
-        st.write("")
+    # === 阶段 2：跳动的爱心 ===
+    elif st.session_state.step == 2:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        # 纯CSS实现的跳动爱心
+        st.markdown('<div class="heart-beat">❤️</div>', unsafe_allow_html=True)
         
-        # --- 数据可视化区 (理科生的浪漫) ---
-        st.markdown("### ⏳ Time Record")
-        days = get_days_together()
-        col_a, col_b = st.columns(2)
-        with col_a:
-            st.metric("We have been together", f"{days} Days")
-        with col_b:
-            st.metric("Valentine's Day", "5th")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("让我们一起开始 🚀"):
+            st.session_state.step = 3
+            st.rerun()
 
-        st.write("")
-        st.write("---")
-
-        # --- 核心互动区：数学爱心 ---
-        st.markdown("### 🎨 Code My Love")
-        st.write("这是用 Python 的 Matplotlib 库为你画的专属心形线：")
-        st.latex(r"x = 16\sin^3(t)")
-        st.latex(r"y = 13\cos(t) - 5\cos(2t) - 2\cos(3t) - \cos(4t)")
+    # === 阶段 3：时光机 & 合照 & 承诺 ===
+    elif st.session_state.step == 3:
+        # --- 3.1 日历动画 ---
+        st.markdown("### 📅 我们的故事开始于...")
+        date_text = st.empty()
         
-        # 按钮互动
-        if st.button("Generate Heart ❤️"):
-            # 进度条增加仪式感
-            progress_bar = st.progress(0)
-            for i in range(100):
-                progress_bar.progress(i + 1)
-            
-            # 展示爱心图
-            st.pyplot(draw_heart())
-            
-            # 这里不用气球(balloons)，改用漫天雪花(snow)，雪花在白色背景下更唯美高级
-            st.snow() 
-            
-            st.markdown("""
-            > "Mathematics may not teach us how to add love or minus hate, 
-            > but it gives us every reason to hope that every problem has a solution."
-            > \n> 而你，就是我所有问题的最优解。
-            """)
-            
-    elif name == "":
-        st.title("🔒 这是一个被加密的浪漫")
-        st.markdown("请在左侧输入你的名字解锁")
-    else:
-        st.error("Access Denied. 名字不对哦~")
+        # 模拟日历翻动效果
+        start_date = "2021-06-06"
+        for i in range(1, 11):
+            date_text.markdown(f"<h2 style='opacity: {i/10}'>{start_date}</h2>", unsafe_allow_html=True)
+            time.sleep(0.1)
+        
+        time.sleep(1)
+        st.balloons() # 气球飘上来
+        
+        st.markdown(f"### 这是我们要一起过的第 <span style='color:red; font-size:30px'>5</span> 个情人节", unsafe_allow_html=True)
+        time.sleep(1)
+        
+        # --- 3.2 合照出现又消失 ---
+        photo_placeholder = st.empty()
+        try:
+            # 显示合照
+            photo_placeholder.image("love.png", caption="那时候的我们", use_column_width=True)
+            time.sleep(4) # 合照停留4秒
+            photo_placeholder.empty() # 合照消失
+        except:
+            photo_placeholder.warning("（这里本该有一张合照，但大宝忘了传 love.png）")
+            time.sleep(2)
+            photo_placeholder.empty()
+
+        # --- 3.3 承诺文字 ---
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("### ✨ 我们还要过好多个情人节 ✨")
+        st.markdown("❤ ❤ ❤ ❤ ❤") # 许多爱心点缀
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("点我接收满屏爱心 💖"):
+            st.session_state.step = 4
+            st.rerun()
+
+    # === 阶段 4：大结局 ===
+    elif st.session_state.step == 4:
+        st.title("💖 永远爱你 💖")
+        st.balloons() # 第一波气球
+        
+        # 再次触发雪花，营造唯美感
+        st.snow()
+        
+        st.markdown("""
+            <div style="text-align: center; color: #FF69B4; font-size: 20px;">
+                Happy Valentine's Day, My Love.<br>
+                From 2021.06.06 to Forever.
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # 提供一个重来的按钮，防止想再看一遍
+        if st.button("再看一遍我们的故事 🔄"):
+            st.session_state.step = 0
+            st.rerun()
 
 if __name__ == "__main__":
     main()
